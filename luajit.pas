@@ -71,8 +71,9 @@ unit luajit;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes, SysUtils, unixtype;
 
+const
   {$IFDEF WINDOWS}
     {$IFDEF WIN64}
       LUAJIT_LibName = 'lua5.1-x64.dll';
@@ -99,17 +100,17 @@ uses
 { Lua }
 
 const
-  LUA_VERSION     = 'Lua 5.1';
-  LUA_RELEASE     = 'Lua 5.1.4';
-  LUA_VERSION_NUM = 501;
-  LUA_COPYRIGHT   = 'Copyright (C) 1994-2008 Lua.org, PUC-Rio';
-  LUA_AUTHORS     = 'R. Ierusalimschy, L. H. de Figueiredo & W. Celes';
+  TLUA_VERSION     = 'Lua 5.1';
+  TLUA_RELEASE     = 'Lua 5.1.4';
+  TLUA_VERSION_NUM = 501;
+  TLUA_COPYRIGHT   = 'Copyright (C) 1994-2008 Lua.org, PUC-Rio';
+  TLUA_AUTHORS     = 'R. Ierusalimschy, L. H. de Figueiredo & W. Celes';
 
   {* mark for precompiled code (`<esc>Lua') *}
-  LUA_SIGNATURE   = '\033Lua';
+  TLUA_SIGNATURE   = '\033Lua';
 
   {* option for multiple returns in `lua_pcall' and `lua_call' *}
-  LUA_MULTRET     = (-1);
+  TLUA_MULTRET     = (-1);
 
 {*
 ** pseudo-indices
@@ -121,6 +122,7 @@ const
   
 function lua_upvalueindex(i: Integer): Integer; inline;
 
+const
 {* thread status; 0 is OK *}
   TLUA_YIELD     = 1;
   TLUA_ERRRUN    = 2;
@@ -140,13 +142,12 @@ type
 *}
 type
   TLua_Reader = function(L: Plua_State; ud: Pointer; sz: Psize_t): PChar; cdecl;
-  TLua_Writer = function(L: Plua_State; const p: Pointer; sz: size_t; ud: Pointer): Integer; cdecl; 
+  TLua_Writer = function(L: Plua_State; const p: Pointer; sz: size_t; ud: Pointer): Integer; cdecl;
 
 {*
 ** prototype for memory-allocation functions
 *}
   TLua_Alloc = function(ud, ptr: Pointer; osize, nsize: size_t): Pointer; cdecl;
-
 
 {*
 ** basic types
@@ -167,18 +168,19 @@ const
 {* minimum Lua stack available to a C function *}
   TLUA_MINSTACK       = 20;
 
+type
 {* Type of Numbers in Lua *}
   TLua_Number = Double;
-  TLua_Integer = PtrInt;  
+  TLua_Integer = PtrInt;
 
 {*
 ** state manipulation
 *}
-function lua_newstate(f: lua_Alloc; ud: Pointer): Plua_state; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_newstate' {$ENDIF} {$ENDIF};
+function lua_newstate(f: TLua_Alloc; ud: Pointer): Plua_state; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_newstate' {$ENDIF} {$ENDIF};
 procedure lua_close(L: Plua_State); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_close' {$ENDIF} {$ENDIF};
 function lua_newthread(L: Plua_State): Plua_State; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_newthread' {$ENDIF} {$ENDIF};
 
-function lua_atpanic(L: Plua_State; panicf: lua_CFunction): lua_CFunction; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_atpanic' {$ENDIF} {$ENDIF}; 
+function lua_atpanic(L: Plua_State; panicf: TLua_CFunction): TLua_CFunction; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_atpanic' {$ENDIF} {$ENDIF}; 
 
 {*
 ** basic stack manipulation
@@ -208,12 +210,12 @@ function lua_equal(L: Plua_State; idx1, idx2: Integer): LongBool; cdecl; externa
 function lua_rawequal(L: Plua_State; idx1, idx2: Integer): LongBool; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_rawequal' {$ENDIF} {$ENDIF};            
 function lua_lessthan(L: Plua_State; idx1, idx2: Integer): LongBool; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_lessthan' {$ENDIF} {$ENDIF};            
 
-function lua_tonumber(L: Plua_State; idx: Integer): lua_Number; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_tonumber' {$ENDIF} {$ENDIF};            
-function lua_tointeger(L: Plua_State; idx: Integer): lua_Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_tointeger' {$ENDIF} {$ENDIF};            
+function lua_tonumber(L: Plua_State; idx: Integer): TLua_Number; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_tonumber' {$ENDIF} {$ENDIF};            
+function lua_tointeger(L: Plua_State; idx: Integer): TLua_Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_tointeger' {$ENDIF} {$ENDIF};            
 function lua_toboolean(L: Plua_State; idx: Integer): LongBool; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_toboolean' {$ENDIF} {$ENDIF};            
 function lua_tolstring(L: Plua_State; idx: Integer; len: Psize_t): PChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_tolstring' {$ENDIF} {$ENDIF};            
 function lua_objlen(L: Plua_State; idx: Integer): size_t; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_objlen' {$ENDIF} {$ENDIF};            
-function lua_tocfunction(L: Plua_State; idx: Integer): lua_CFunction; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_tocfunction' {$ENDIF} {$ENDIF};            
+function lua_tocfunction(L: Plua_State; idx: Integer): TLua_CFunction; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_tocfunction' {$ENDIF} {$ENDIF};            
 function lua_touserdata(L: Plua_State; idx: Integer): Pointer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_touserdata' {$ENDIF} {$ENDIF};            
 function lua_tothread(L: Plua_State; idx: Integer): Plua_State; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_tothread' {$ENDIF} {$ENDIF};            
 function lua_topointer(L: Plua_State; idx: Integer): Pointer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_topointer' {$ENDIF} {$ENDIF};               
@@ -223,13 +225,13 @@ function lua_topointer(L: Plua_State; idx: Integer): Pointer; cdecl; external LU
 ** push functions (C -> stack)
 *}
 procedure lua_pushnil(L: Plua_State); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_pushnil' {$ENDIF} {$ENDIF};               
-procedure lua_pushnumber(L: Plua_State; n: lua_Number); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_pushnumber' {$ENDIF} {$ENDIF};               
-procedure lua_pushinteger(L: Plua_State; n: lua_Integer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_pushinteger' {$ENDIF} {$ENDIF};               
+procedure lua_pushnumber(L: Plua_State; n: TLua_Number); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_pushnumber' {$ENDIF} {$ENDIF};               
+procedure lua_pushinteger(L: Plua_State; n: TLua_Integer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_pushinteger' {$ENDIF} {$ENDIF};               
 procedure lua_pushlstring(L: Plua_State; const s: PChar; l_: size_t); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_pushlstring' {$ENDIF} {$ENDIF};               
 procedure lua_pushstring(L: Plua_State; const s: PChar); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_pushstring' {$ENDIF} {$ENDIF};               
 function lua_pushvfstring(L: Plua_State; const fmt: PChar; argp: Pointer): PChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_pushvfstring' {$ENDIF} {$ENDIF};               
 function lua_pushfstring(L: Plua_State; const fmt: PChar): PChar; cdecl; varargs; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_pushfstring' {$ENDIF} {$ENDIF};               
-procedure lua_pushcclosure(L: Plua_State; fn: lua_CFunction; n: Integer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_pushcclosure' {$ENDIF} {$ENDIF};               
+procedure lua_pushcclosure(L: Plua_State; fn: TLua_CFunction; n: Integer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_pushcclosure' {$ENDIF} {$ENDIF};               
 procedure lua_pushboolean(L: Plua_State; b: LongBool); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_pushboolean' {$ENDIF} {$ENDIF};               
 procedure lua_pushlightuserdata(L: Plua_State; p: Pointer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_pushlightuserdata' {$ENDIF} {$ENDIF};               
 procedure lua_pushthread(L: Plua_State); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_pushthread' {$ENDIF} {$ENDIF};                 
@@ -261,10 +263,10 @@ function lua_setfenv(L: Plua_State; idx: Integer): Integer; cdecl;  external LUA
 *}
 procedure lua_call(L: Plua_State; nargs, nresults: Integer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_call' {$ENDIF} {$ENDIF};                 
 function lua_pcall(L: Plua_State; nargs, nresults, errf: Integer): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_pcall' {$ENDIF} {$ENDIF};                 
-function lua_cpcall(L: Plua_State; func: lua_CFunction; ud: Pointer): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_cpcall' {$ENDIF} {$ENDIF};                 
-function lua_load(L: Plua_State; reader: lua_Reader; dt: Pointer; const chunkname: PChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_load' {$ENDIF} {$ENDIF};                 
+function lua_cpcall(L: Plua_State; func: TLua_CFunction; ud: Pointer): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_cpcall' {$ENDIF} {$ENDIF};                 
+function lua_load(L: Plua_State; reader: TLua_Reader; dt: Pointer; const chunkname: PChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_load' {$ENDIF} {$ENDIF};                 
 
-function lua_dump(L: Plua_State; writer: lua_Writer; data: Pointer): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_dump' {$ENDIF} {$ENDIF};                         
+function lua_dump(L: Plua_State; writer: TLua_Writer; data: Pointer): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_dump' {$ENDIF} {$ENDIF};                         
 
 {*
 ** coroutine functions
@@ -277,14 +279,14 @@ function lua_status(L: Plua_State): Integer; cdecl; external LUAJIT_LIBNAME {$IF
 ** garbage-collection function and options
 *}
 const
-  LUA_GCSTOP       = 0;
-  LUA_GCRESTART    = 1;
-  LUA_GCCOLLECT    = 2;
-  LUA_GCCOUNT      = 3;
-  LUA_GCCOUNTB     = 4;
-  LUA_GCSTEP       = 5;
-  LUA_GCSETPAUSE   = 6;
-  LUA_GCSETSTEPMUL = 7;
+  TLUA_GCSTOP       = 0;
+  TLUA_GCRESTART    = 1;
+  TLUA_GCCOLLECT    = 2;
+  TLUA_GCCOUNT      = 3;
+  TLUA_GCCOUNTB     = 4;
+  TLUA_GCSTEP       = 5;
+  TLUA_GCSETPAUSE   = 6;
+  TLUA_GCSETSTEPMUL = 7;
 
 function lua_gc(L: Plua_State; what, data: Integer): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_gc' {$ENDIF} {$ENDIF};                          
 
@@ -297,8 +299,8 @@ function lua_next(L: Plua_State; idx: Integer): Integer; cdecl; external LUAJIT_
 
 procedure lua_concat(L: Plua_State; n: Integer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_concat' {$ENDIF} {$ENDIF};                         
 
-function lua_getallocf(L: Plua_State; ud: PPointer): lua_Alloc; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_getallocf' {$ENDIF} {$ENDIF};                         
-procedure lua_setallocf(L: Plua_State; f: lua_Alloc; ud: Pointer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_setallocf' {$ENDIF} {$ENDIF};                            
+function lua_getallocf(L: Plua_State; ud: PPointer): TLua_Alloc; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_getallocf' {$ENDIF} {$ENDIF};                         
+procedure lua_setallocf(L: Plua_State; f: TLua_Alloc; ud: Pointer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_setallocf' {$ENDIF} {$ENDIF};                            
 
 {*
 ** ===============================================================
@@ -309,8 +311,8 @@ procedure lua_pop(L: Plua_State; n: Integer); inline;
 
 procedure lua_newtable(L: Plua_state); inline;
 
-procedure lua_register(L: Plua_State; const n: PChar; f: lua_CFunction); inline;
-procedure lua_pushcfunction(L: Plua_State; f: lua_CFunction); inline;
+procedure lua_register(L: Plua_State; const n: PAnsiChar; f: TLua_CFunction); inline;
+procedure lua_pushcfunction(L: Plua_State; f: TLua_CFunction); inline;
 
 function lua_strlen(L: Plua_state; i: Integer): size_t; inline;
 
@@ -323,12 +325,12 @@ function lua_isthread(L: Plua_State; n: Integer): Boolean; inline;
 function lua_isnone(L: Plua_State; n: Integer): Boolean; inline;
 function lua_isnoneornil(L: Plua_State; n: Integer): Boolean; inline;
 
-procedure lua_pushliteral(L: Plua_State; s: PChar); inline;
+procedure lua_pushliteral(L: Plua_State; s: PAnsiChar); inline;
 
-procedure lua_setglobal(L: Plua_State; const s: PChar); inline;
-procedure lua_getglobal(L: Plua_State; const s: PChar); inline;
+procedure lua_setglobal(L: Plua_State; const s: PAnsiChar); inline;
+procedure lua_getglobal(L: Plua_State; const s: PAnsiChar); inline;
 
-function lua_tostring(L: Plua_State; i: Integer): PChar; inline;
+function lua_tostring(L: Plua_State; i: Integer): PAnsiChar; inline;
 
 {*
 ** compatibility macros and functions
@@ -339,14 +341,14 @@ procedure lua_getregistry(L: Plua_State); inline;
 function lua_getgccount(L: Plua_State): Integer; inline;
 
 type
-  lua_Chunkreader = lua_Reader;
-  lua_Chunkwriter = lua_Writer;
+  TLua_ChunkReader = TLua_Reader;
+  TLua_ChunkWriter = TLua_Writer;
                     
 {* hack *}
-procedure lua_setlevel(from: Plua_state, to_: Plua_state); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_setlevel' {$ENDIF} {$ENDIF};                             
+procedure lua_setlevel(from: Plua_state; to_: Plua_state); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_setlevel' {$ENDIF} {$ENDIF};
 
 {*
-** {======================================================================
+** =======================================================================
 ** Debug API
 ** =======================================================================
 *}
@@ -355,60 +357,60 @@ procedure lua_setlevel(from: Plua_state, to_: Plua_state); cdecl; external LUAJI
 ** Event codes
 *}
 const
-  LUA_HOOKCALL    = 0;
-  LUA_HOOKRET     = 1;
-  LUA_HOOKLINE    = 2;
-  LUA_HOOKCOUNT   = 3;
-  LUA_HOOKTAILRET = 4;
+  TLUA_HOOKCALL    = 0;
+  TLUA_HOOKRET     = 1;
+  TLUA_HOOKLINE    = 2;
+  TLUA_HOOKCOUNT   = 3;
+  TLUA_HOOKTAILRET = 4;
 
 {*
 ** Event masks
 *}
 const
-  LUA_MASKCALL  = 1 shl Ord(LUA_HOOKCALL);
-  LUA_MASKRET   = 1 shl Ord(LUA_HOOKRET);
-  LUA_MASKLINE  = 1 shl Ord(LUA_HOOKLINE);
-  LUA_MASKCOUNT = 1 shl Ord(LUA_HOOKCOUNT);
+  TLUA_MASKCALL  = 1 shl Ord(TLUA_HOOKCALL);
+  TLUA_MASKRET   = 1 shl Ord(TLUA_HOOKRET);
+  TLUA_MASKLINE  = 1 shl Ord(TLUA_HOOKLINE);
+  TLUA_MASKCOUNT = 1 shl Ord(TLUA_HOOKCOUNT);
 
 const
-  LUA_IDSIZE = 60;   
+  TLUA_IDSIZE = 60;   
 
 type
-  lua_Debug = record           {* activation record *}
+  TLua_Debug = record           {* activation record *}
     event: Integer;
-    name: PChar;               {* (n) *}
-    namewhat: PChar;           {* (n) `global', `local', `field', `method' *}
-    what: PChar;               {* (S) `Lua', `C', `main', `tail'*}
-    source: PChar;             {* (S) *}
+    name: PAnsiChar;               {* (n) *}
+    namewhat: PAnsiChar;           {* (n) `global', `local', `field', `method' *}
+    what: PAnsiChar;               {* (S) `Lua', `C', `main', `tail'*}
+    source: PAnsiChar;             {* (S) *}
     currentline: Integer;      {* (l) *}
     nups: Integer;             {* (u) number of upvalues *}
     linedefined: Integer;      {* (S) *}
     lastlinedefined: Integer;  {* (S) *}
-    short_src: array[0..LUA_IDSIZE - 1] of Char; {* (S) *}
+    short_src: array[0..TLUA_IDSIZE - 1] of Char; {* (S) *}
     {* private part *}
     i_ci: Integer;              {* active function *}
   end;
-  Plua_Debug = ^lua_Debug;
+  PLua_Debug = ^TLua_Debug;
 
 {* Functions to be called by the debuger in specific events *}
-  lua_Hook = procedure(L: Plua_State; ar: Plua_Debug); cdecl;
+  TLua_Hook = procedure(L: Plua_State; ar: Plua_Debug); cdecl;
            
 function lua_getstack(L: Plua_State; level: Integer; ar: Plua_Debug): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_getstack' {$ENDIF} {$ENDIF};                             
-function lua_getinfo(L: Plua_State; const what: PChar; ar: Plua_Debug): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_getinfo' {$ENDIF} {$ENDIF};                             
-function lua_getlocal(L: Plua_State; const ar: Plua_Debug; n: Integer): PChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_getlocal' {$ENDIF} {$ENDIF};                             
-function lua_setlocal(L: Plua_State; const ar: Plua_Debug; n: Integer): PChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_setlocal' {$ENDIF} {$ENDIF};                             
-function lua_getupvalue(L: Plua_State; funcindex: Integer; n: Integer): PChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_getupvalue' {$ENDIF} {$ENDIF};                             
-function lua_setupvalue(L: Plua_State; funcindex: Integer; n: Integer): PChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_setupvalue' {$ENDIF} {$ENDIF};                             
+function lua_getinfo(L: Plua_State; const what: PAnsiChar; ar: Plua_Debug): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_getinfo' {$ENDIF} {$ENDIF};                             
+function lua_getlocal(L: Plua_State; const ar: Plua_Debug; n: Integer): PAnsiChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_getlocal' {$ENDIF} {$ENDIF};                             
+function lua_setlocal(L: Plua_State; const ar: Plua_Debug; n: Integer): PAnsiChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_setlocal' {$ENDIF} {$ENDIF};                             
+function lua_getupvalue(L: Plua_State; funcindex: Integer; n: Integer): PAnsiChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_getupvalue' {$ENDIF} {$ENDIF};                             
+function lua_setupvalue(L: Plua_State; funcindex: Integer; n: Integer): PAnsiChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_setupvalue' {$ENDIF} {$ENDIF};                             
 
-function lua_sethook(L: Plua_State; func: lua_Hook; mask: Integer; count: Integer): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_sethook' {$ENDIF} {$ENDIF};                             
-function lua_gethook(L: Plua_State): lua_Hook; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_gethook' {$ENDIF} {$ENDIF};                             
+function lua_sethook(L: Plua_State; func: TLua_Hook; mask: Integer; count: Integer): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_sethook' {$ENDIF} {$ENDIF};                             
+function lua_gethook(L: Plua_State): TLua_Hook; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_gethook' {$ENDIF} {$ENDIF};                             
 function lua_gethookmask(L: Plua_State): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_gethookmask' {$ENDIF} {$ENDIF};                             
 function lua_gethookcount(L: Plua_State): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_gethookcount' {$ENDIF} {$ENDIF};                                
 
 {* From Lua 5.2. *}
 function lua_upvalueid(L: Plua_State; idx: Integer; n: Integer): Pointer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_upvalueid' {$ENDIF} {$ENDIF};                                
 procedure lua_upvaluejoin(L: Plua_State; idx1, n1, idx2, n2: Integer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_upvaluejoin' {$ENDIF} {$ENDIF};                                
-function lua_loadx(L: Plua_State; reader: lua_Reader; dt: Pointer; const chunkname: PChar; const mode: PChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_loadx' {$ENDIF} {$ENDIF};                                
+function lua_loadx(L: Plua_State; reader: TLua_Reader; dt: Pointer; const chunkname: PAnsiChar; const mode: PAnsiChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_lua_loadx' {$ENDIF} {$ENDIF};                                
 
 { lauxlib }
 
@@ -421,81 +423,81 @@ procedure luaL_setn(L: Plua_State; t, n: Integer); // does nothing!
                            
 {* extra error code for `luaL_load' *}
 const
-  LUA_ERRFILE = (LUA_ERRERR+1)
+  TLUA_ERRFILE = (TLUA_ERRERR+1);
   
 type
-  luaL_reg = record
-    name: PChar;
-    func: lua_CFunction;
+  TluaL_reg = record
+    name: PAnsiChar;
+    func: TLua_CFunction;
   end;
-  PluaL_reg = ^luaL_reg;
+  PluaL_reg = ^TluaL_reg;
 
-procedure luaL_openlib(L: Plua_State; const libname: PChar; const lr: PluaL_reg; nup: Integer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_openload' {$ENDIF} {$ENDIF};                                
-procedure luaL_register(L: Plua_State; const libname: PChar; const lr: PluaL_reg); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_register' {$ENDIF} {$ENDIF};                                
-function luaL_getmetafield(L: Plua_State; obj: Integer; const e: PChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_getmetafield' {$ENDIF} {$ENDIF};                                
-function luaL_callmeta(L: Plua_State; obj: Integer; const e: PChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_callmeta' {$ENDIF} {$ENDIF};                                
-function luaL_typerror(L: Plua_State; narg: Integer; const tname: PChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_typeerror' {$ENDIF} {$ENDIF};                                
-function luaL_argerror(L: Plua_State; numarg: Integer; const extramsg: PChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_argerror' {$ENDIF} {$ENDIF};                                
-function luaL_checklstring(L: Plua_State; numArg: Integer; l_: Psize_t): PChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_checklstring' {$ENDIF} {$ENDIF};                                
-function luaL_optlstring(L: Plua_State; numArg: Integer; const def: PChar; l_: Psize_t): PChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_optlstring' {$ENDIF} {$ENDIF};                                
-function luaL_checknumber(L: Plua_State; numArg: Integer): lua_Number; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_checknumber' {$ENDIF} {$ENDIF};                                
-function luaL_optnumber(L: Plua_State; nArg: Integer; def: lua_Number): lua_Number; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_optnumber' {$ENDIF} {$ENDIF};                                
-function luaL_checkinteger(L: Plua_State; numArg: Integer): lua_Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_checkinteger' {$ENDIF} {$ENDIF};                                
-function luaL_optinteger(L: Plua_State; nArg: Integer; def: lua_Integer): lua_Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_optinteger' {$ENDIF} {$ENDIF};                                
+procedure luaL_openlib(L: Plua_State; const libname: PAnsiChar; const lr: PluaL_reg; nup: Integer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_openload' {$ENDIF} {$ENDIF};                                
+procedure luaL_register(L: Plua_State; const libname: PAnsiChar; const lr: PluaL_reg); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_register' {$ENDIF} {$ENDIF};                                
+function luaL_getmetafield(L: Plua_State; obj: Integer; const e: PAnsiChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_getmetafield' {$ENDIF} {$ENDIF};                                
+function luaL_callmeta(L: Plua_State; obj: Integer; const e: PAnsiChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_callmeta' {$ENDIF} {$ENDIF};                                
+function luaL_typerror(L: Plua_State; narg: Integer; const tname: PAnsiChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_typeerror' {$ENDIF} {$ENDIF};                                
+function luaL_argerror(L: Plua_State; numarg: Integer; const extramsg: PAnsiChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_argerror' {$ENDIF} {$ENDIF};                                
+function luaL_checklstring(L: Plua_State; numArg: Integer; l_: Psize_t): PAnsiChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_checklstring' {$ENDIF} {$ENDIF};                                
+function luaL_optlstring(L: Plua_State; numArg: Integer; const def: PAnsiChar; l_: Psize_t): PAnsiChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_optlstring' {$ENDIF} {$ENDIF};                                
+function luaL_checknumber(L: Plua_State; numArg: Integer): TLua_Number; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_checknumber' {$ENDIF} {$ENDIF};                                
+function luaL_optnumber(L: Plua_State; nArg: Integer; def: TLua_Number): TLua_Number; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_optnumber' {$ENDIF} {$ENDIF};                                
+function luaL_checkinteger(L: Plua_State; numArg: Integer): TLua_Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_checkinteger' {$ENDIF} {$ENDIF};                                
+function luaL_optinteger(L: Plua_State; nArg: Integer; def: TLua_Integer): TLua_Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_optinteger' {$ENDIF} {$ENDIF};                                
 
-procedure luaL_checkstack(L: Plua_State; sz: Integer; const msg: PChar); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_checkstack' {$ENDIF} {$ENDIF};                                
+procedure luaL_checkstack(L: Plua_State; sz: Integer; const msg: PAnsiChar); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_checkstack' {$ENDIF} {$ENDIF};                                
 procedure luaL_checktype(L: Plua_State; narg, t: Integer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_checkstack' {$ENDIF} {$ENDIF};                                
 procedure luaL_checkany(L: Plua_State; narg: Integer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_checkany' {$ENDIF} {$ENDIF};                                
 
-function luaL_newmetatable(L: Plua_State; const tname: PChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_newmetatable' {$ENDIF} {$ENDIF};                                
-function luaL_checkudata(L: Plua_State; ud: Integer; const tname: PChar): Pointer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_checkudata' {$ENDIF} {$ENDIF};                                
+function luaL_newmetatable(L: Plua_State; const tname: PAnsiChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_newmetatable' {$ENDIF} {$ENDIF};                                
+function luaL_checkudata(L: Plua_State; ud: Integer; const tname: PAnsiChar): Pointer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_checkudata' {$ENDIF} {$ENDIF};                                
 
 procedure luaL_where(L: Plua_State; lvl: Integer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_where' {$ENDIF} {$ENDIF};                                
 {$IFNDEF DELPHI}
-function luaL_error(L: Plua_State; const fmt: PChar; args: array of const): Integer; cdecl; external LUA_LIB_NAME; // note: C's ... to array of const conversion is not portable to Delphi
+function luaL_error(L: Plua_State; const fmt: PAnsiChar; args: array of const): Integer; cdecl; external LUAJIT_LIBNAME; // note: C's ... to array of const conversion is not portable to Delphi
 {$ENDIF}
 
-function luaL_checkoption(L: Plua_State; narg: Integer; def: PChar; lst: PPChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_checkoption' {$ENDIF} {$ENDIF};                                
+function luaL_checkoption(L: Plua_State; narg: Integer; def: PAnsiChar; lst: PPAnsiChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_checkoption' {$ENDIF} {$ENDIF};                                
 
 function luaL_ref(L: Plua_State; t: Integer): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_ref' {$ENDIF} {$ENDIF};                                
 procedure luaL_unref(L: Plua_State; t, ref: Integer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_unref' {$ENDIF} {$ENDIF};                                
 
-function luaL_loadfile(L: Plua_State; const filename: PChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_loadfile' {$ENDIF} {$ENDIF};                                
-function luaL_loadbuffer(L: Plua_State; const buff: PChar; size: size_t; const name: PChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_loadbuffer' {$ENDIF} {$ENDIF};                                
-function luaL_loadstring(L: Plua_State; const s: PChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_loadstring' {$ENDIF} {$ENDIF};                                
+function luaL_loadfile(L: Plua_State; const filename: PAnsiChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_loadfile' {$ENDIF} {$ENDIF};                                
+function luaL_loadbuffer(L: Plua_State; const buff: PAnsiChar; size: size_t; const name: PAnsiChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_loadbuffer' {$ENDIF} {$ENDIF};                                
+function luaL_loadstring(L: Plua_State; const s: PAnsiChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_loadstring' {$ENDIF} {$ENDIF};                                
 
 function luaL_newstate: Plua_State; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_newstate' {$ENDIF} {$ENDIF};                                
 function lua_open: Plua_State; // compatibility; moved from unit lua to lauxlib because it needs luaL_newstate
 
-function luaL_gsub(L: Plua_State; const s, p, r: PChar): PChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_gsub' {$ENDIF} {$ENDIF};                                
-function luaL_findtable(L: Plua_State; idx: Integer; const fname: PChar; szhint: Integer): PChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_findtable' {$ENDIF} {$ENDIF};                                
+function luaL_gsub(L: Plua_State; const s, p, r: PAnsiChar): PAnsiChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_gsub' {$ENDIF} {$ENDIF};                                
+function luaL_findtable(L: Plua_State; idx: Integer; const fname: PAnsiChar; szhint: Integer): PAnsiChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_findtable' {$ENDIF} {$ENDIF};                                
                 
 {* From Lua 5.2. *}
-function luaL_fileresult(L: Plua_State; stat: Integer; const fname: PChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_fileresult' {$ENDIF} {$ENDIF};                                
+function luaL_fileresult(L: Plua_State; stat: Integer; const fname: PAnsiChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_fileresult' {$ENDIF} {$ENDIF};                                
 function luaL_execresult(L: Plua_State; state: Integer): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_execresult' {$ENDIF} {$ENDIF};                                
-function luaL_loadfilex(L: Plua_State; const filename: PChar; const mode: PChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_loadfilex' {$ENDIF} {$ENDIF};                                
-function luaL_loadbufferx(L: Plua_State; const buff: PChar; sz: size_t; const name: PChar; const mode: PChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_loadbufferx' {$ENDIF} {$ENDIF};                                
-procedure luaL_traceback(L, L1: Plua_State; const msg: PChar; level: Integer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_traceback' {$ENDIF} {$ENDIF};                                
+function luaL_loadfilex(L: Plua_State; const filename: PAnsiChar; const mode: PAnsiChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_loadfilex' {$ENDIF} {$ENDIF};                                
+function luaL_loadbufferx(L: Plua_State; const buff: PAnsiChar; sz: size_t; const name: PAnsiChar; const mode: PAnsiChar): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_loadbufferx' {$ENDIF} {$ENDIF};                                
+procedure luaL_traceback(L, L1: Plua_State; const msg: PAnsiChar; level: Integer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_traceback' {$ENDIF} {$ENDIF};                                
 
 {*
 ** ===============================================================
 ** some useful macros
 ** ===============================================================
 *}
-procedure luaL_argcheck(L: Plua_State; cond: Boolean; numarg: Integer; extramsg: PChar); inline;
-function luaL_checkstring(L: Plua_State; n: Integer): PChar; inline;
-function luaL_optstring(L: Plua_State; n: Integer; d: PChar): PChar; inline;
+procedure luaL_argcheck(L: Plua_State; cond: Boolean; numarg: Integer; extramsg: PAnsiChar); inline;
+function luaL_checkstring(L: Plua_State; n: Integer): PAnsiChar; inline;
+function luaL_optstring(L: Plua_State; n: Integer; d: PAnsiChar): PAnsiChar; inline;
 function luaL_checkint(L: Plua_State; n: Integer): Integer; inline;
 function luaL_checklong(L: Plua_State; n: Integer): LongInt; inline;
 function luaL_optint(L: Plua_State; n: Integer; d: Double): Integer; inline;
 function luaL_optlong(L: Plua_State; n: Integer; d: Double): LongInt; inline;
 
-function luaL_typename(L: Plua_State; i: Integer): PChar; inline;
+function luaL_typename(L: Plua_State; i: Integer): PAnsiChar; inline;
 
-function lua_dofile(L: Plua_State; const filename: PChar): Integer; inline;
-function lua_dostring(L: Plua_State; const str: PChar): Integer; inline;
+function lua_dofile(L: Plua_State; const filename: PAnsiChar): Integer; inline;
+function lua_dostring(L: Plua_State; const str: PAnsiChar): Integer; inline;
 
-procedure lua_Lgetmetatable(L: Plua_State; tname: PChar); inline;
+procedure lua_Lgetmetatable(L: Plua_State; tname: PAnsiChar); inline;
          
 //luaL_opt(L,f,n,d)	(lua_isnoneornil(L,(n)) ? (d) : f(L,(n)))
 
@@ -507,14 +509,14 @@ procedure lua_Lgetmetatable(L: Plua_State; tname: PChar); inline;
 
 const
   // note: this is just arbitrary, as it related to the BUFSIZ defined in stdio.h ...
-  LUAL_BUFFERSIZE = 4096;  
+  TLUAL_BUFFERSIZE = 4096;  
   
 type
   luaL_Buffer = record
-    p: PChar;       (* current position in buffer *)
+    p: PAnsiChar;       (* current position in buffer *)
     lvl: Integer;   (* number of strings in the stack (level) *)
     L: Plua_State;
-    buffer: array [0..LUAL_BUFFERSIZE - 1] of Char; // warning: see note above about LUAL_BUFFERSIZE
+    buffer: array [0..TLUAL_BUFFERSIZE - 1] of Char; // warning: see note above about LUAL_BUFFERSIZE
   end;
   PluaL_Buffer = ^luaL_Buffer;       
   
@@ -526,9 +528,9 @@ procedure luaL_putchar(B: PluaL_Buffer; c: Char); inline; // warning: see note a
 procedure luaL_addsize(B: PluaL_Buffer; n: Integer); inline;
 
 procedure luaL_buffinit(L: Plua_State; B: PluaL_Buffer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_buffinit' {$ENDIF} {$ENDIF};                                
-function luaL_prepbuffer(B: PluaL_Buffer): PChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_prepbuffer' {$ENDIF} {$ENDIF};                                
-procedure luaL_addlstring(B: PluaL_Buffer; const s: PChar; l: size_t); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_addlstring' {$ENDIF} {$ENDIF};                                
-procedure luaL_addstring(B: PluaL_Buffer; const s: PChar); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_addstring' {$ENDIF} {$ENDIF};                                
+function luaL_prepbuffer(B: PluaL_Buffer): PAnsiChar; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_prepbuffer' {$ENDIF} {$ENDIF};                                
+procedure luaL_addlstring(B: PluaL_Buffer; const s: PAnsiChar; l: size_t); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_addlstring' {$ENDIF} {$ENDIF};                                
+procedure luaL_addstring(B: PluaL_Buffer; const s: PAnsiChar); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_addstring' {$ENDIF} {$ENDIF};                                
 procedure luaL_addvalue(B: PluaL_Buffer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_addvalue' {$ENDIF} {$ENDIF};                                
 procedure luaL_pushresult(B: PluaL_Buffer); cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaL_pushresult' {$ENDIF} {$ENDIF};                                
 
@@ -583,33 +585,30 @@ const
   LUAJIT_URL         = 'http://luajit.org/';
 
   {* Modes for luaJIT_setmode. *}
-  LUAJIT_MODE_MASK   = $00ff;
+  TLUAJIT_MODE_MASK   = $00ff;
 
-type
-  TLUAJIT_MODE = (
-  LUAJIT_MODE_ENGINE,		{* Set mode for whole JIT engine. *}
-  LUAJIT_MODE_DEBUG,		{* Set debug mode (idx = level). *}
+const
+  TLUAJIT_MODE_ENGINE     = 0;   {* Set mode for whole JIT engine. *}
+  TLUAJIT_MODE_DEBUG      = 1;   {* Set debug mode (idx = level). *}
 
-  LUAJIT_MODE_FUNC,		{* Change mode for a function. *}
-  LUAJIT_MODE_ALLFUNC,		{* Recurse into subroutine protos. *}
-  LUAJIT_MODE_ALLSUBFUNC,	{* Change only the subroutines. *}
+  TLUAJIT_MODE_FUNC       = 2;   {* Change mode for a function. *}
+  TLUAJIT_MODE_ALLFUNC    = 3;   {* Recurse into subroutine protos. *}
+  TLUAJIT_MODE_ALLSUBFUNC = 4;   {* Change only the subroutines. *}
 
-  LUAJIT_MODE_TRACE,		{* Flush a compiled trace. *}
+  TLUAJIT_MODE_TRACE      = 5;   {* Flush a compiled trace. *}
 
-  LUAJIT_MODE_WRAPCFUNC = 0x10,	{* Set wrapper mode for C function calls. *}
+  TLUAJIT_MODE_WRAPCFUNC  = $10; {* Set wrapper mode for C function calls. *}
 
-  LUAJIT_MODE_MAX
-  );
-
+const
   {* Flags or'ed in to the mode. *}
-  LUAJIT_MODE_OFF   = $0000;	{* Turn feature off. *}
-  LUAJIT_MODE_ON    = $0100;	{* Turn feature on. *}
-  LUAJIT_MODE_FLUSH = $0200;	{* Flush JIT-compiled code. *}
+  TLUAJIT_MODE_OFF   = $0000;	{* Turn feature off. *}
+  TLUAJIT_MODE_ON    = $0100;	{* Turn feature on. *}
+  TLUAJIT_MODE_FLUSH = $0200;	{* Flush JIT-compiled code. *}
 
 {* LuaJIT public C API. *}
 
 {* Control the JIT engine. *}
-function luaJIT_setmode(lua_State *L, int idx, int mode): Integer;
+function luaJIT_setmode(L: PLua_State; idx: Integer; mode: Integer): Integer; cdecl; external LUAJIT_LIBNAME {$IFDEF DELPHI} {$IFDEF MACOS} name '_luaJIT_setmode' {$ENDIF} {$ENDIF};
 
 {* Enforce (dynamic) linker error for version mismatches. Call from main. *}
 //procedure LUAJIT_VERSION_SYM();
@@ -618,7 +617,7 @@ implementation
 
 function lua_upvalueindex(i: Integer): Integer;
 begin
-  Result := LUA_GLOBALSINDEX - i;
+  Result := TLUA_GLOBALSINDEX - i;
 end;
 
 procedure lua_pop(L: Plua_State; n: Integer);
@@ -631,13 +630,13 @@ begin
   lua_createtable(L, 0, 0);
 end;
 
-procedure lua_register(L: Plua_State; const n: PChar; f: lua_CFunction);
+procedure lua_register(L: Plua_State; const n: PAnsiChar; f: TLua_CFunction);
 begin
   lua_pushcfunction(L, f);
   lua_setglobal(L, n);
 end;
 
-procedure lua_pushcfunction(L: Plua_State; f: lua_CFunction);
+procedure lua_pushcfunction(L: Plua_State; f: TLua_CFunction);
 begin
   lua_pushcclosure(L, f, 0);
 end;
@@ -649,37 +648,37 @@ end;
 
 function lua_isfunction(L: Plua_State; n: Integer): Boolean;
 begin
-  Result := lua_type(L, n) = LUA_TFUNCTION;
+  Result := lua_type(L, n) = TLUA_TFUNCTION;
 end;
 
 function lua_istable(L: Plua_State; n: Integer): Boolean;
 begin
-  Result := lua_type(L, n) = LUA_TTABLE;
+  Result := lua_type(L, n) = TLUA_TTABLE;
 end;
 
 function lua_islightuserdata(L: Plua_State; n: Integer): Boolean;
 begin
-  Result := lua_type(L, n) = LUA_TLIGHTUSERDATA;
+  Result := lua_type(L, n) = TLUA_TLIGHTUSERDATA;
 end;
 
 function lua_isnil(L: Plua_State; n: Integer): Boolean;
 begin
-  Result := lua_type(L, n) = LUA_TNIL;
+  Result := lua_type(L, n) = TLUA_TNIL;
 end;
 
 function lua_isboolean(L: Plua_State; n: Integer): Boolean;
 begin
-  Result := lua_type(L, n) = LUA_TBOOLEAN;
+  Result := lua_type(L, n) = TLUA_TBOOLEAN;
 end;
 
 function lua_isthread(L: Plua_State; n: Integer): Boolean;
 begin
-  Result := lua_type(L, n) = LUA_TTHREAD;
+  Result := lua_type(L, n) = TLUA_TTHREAD;
 end;
 
 function lua_isnone(L: Plua_State; n: Integer): Boolean;
 begin
-  Result := lua_type(L, n) = LUA_TNONE;
+  Result := lua_type(L, n) = TLUA_TNONE;
 end;
 
 function lua_isnoneornil(L: Plua_State; n: Integer): Boolean;
@@ -687,39 +686,39 @@ begin
   Result := lua_type(L, n) <= 0;
 end;
 
-procedure lua_pushliteral(L: Plua_State; s: PChar);
+procedure lua_pushliteral(L: Plua_State; s: PAnsiChar);
 begin
   lua_pushlstring(L, s, Length(s));
 end;
 
-procedure lua_setglobal(L: Plua_State; const s: PChar);
+procedure lua_setglobal(L: Plua_State; const s: PAnsiChar);
 begin
-  lua_setfield(L, LUA_GLOBALSINDEX, s);
+  lua_setfield(L, TLUA_GLOBALSINDEX, s);
 end;
 
-procedure lua_getglobal(L: Plua_State; const s: PChar);
+procedure lua_getglobal(L: Plua_State; const s: PAnsiChar);
 begin
-  lua_getfield(L, LUA_GLOBALSINDEX, s);
+  lua_getfield(L, TLUA_GLOBALSINDEX, s);
 end;
 
-function lua_tostring(L: Plua_State; i: Integer): PChar;
+function lua_tostring(L: Plua_State; i: Integer): PAnsiChar;
 begin
   Result := lua_tolstring(L, i, nil);
 end;         
 
 procedure lua_getregistry(L: Plua_State);
 begin
-  lua_pushvalue(L, LUA_REGISTRYINDEX);
+  lua_pushvalue(L, TLUA_REGISTRYINDEX);
 end;
 
 function lua_getgccount(L: Plua_State): Integer;
 begin
-  Result := lua_gc(L, LUA_GCCOUNT, 0);
+  Result := lua_gc(L, TLUA_GCCOUNT, 0);
 end;         
 
 procedure lua_pushstring(L: Plua_State; const s: string);
 begin
-  lua_pushlstring(L, PChar(s), Length(s));
+  lua_pushlstring(L, PAnsiChar(s), Length(s));
 end;
 
 function luaL_getn(L: Plua_State; n: Integer): Integer;
@@ -732,18 +731,23 @@ begin
   // does nothing as this operation is deprecated
 end;        
 
-procedure luaL_argcheck(L: Plua_State; cond: Boolean; numarg: Integer; extramsg: PChar);
+function lua_open: Plua_State;
+begin
+  Result := luaL_newstate;
+end;
+
+procedure luaL_argcheck(L: Plua_State; cond: Boolean; numarg: Integer; extramsg: PAnsiChar);
 begin
   if not cond then
     luaL_argerror(L, numarg, extramsg)
 end;
 
-function luaL_checkstring(L: Plua_State; n: Integer): PChar;
+function luaL_checkstring(L: Plua_State; n: Integer): PAnsiChar;
 begin
   Result := luaL_checklstring(L, n, nil)
 end;
 
-function luaL_optstring(L: Plua_State; n: Integer; d: PChar): PChar;
+function luaL_optstring(L: Plua_State; n: Integer; d: PAnsiChar): PAnsiChar;
 begin
   Result := luaL_optlstring(L, n, d, nil)
 end;
@@ -768,33 +772,33 @@ begin
   Result := LongInt(Trunc(luaL_optnumber(L, n, d)))
 end;           
 
-function luaL_typename(L: Plua_State; i: Integer): PChar;
+function luaL_typename(L: Plua_State; i: Integer): PAnsiChar;
 begin
   Result := lua_typename(L, lua_type(L, i));
 end;  
 
-function lua_dofile(L: Plua_State; const filename: PChar): Integer;
+function lua_dofile(L: Plua_State; const filename: PAnsiChar): Integer;
 begin
   Result := luaL_loadfile(L, filename);
   if Result = 0 then
-    Result := lua_pcall(L, 0, LUA_MULTRET, 0);
+    Result := lua_pcall(L, 0, TLUA_MULTRET, 0);
 end;
 
-function lua_dostring(L: Plua_State; const str: PChar): Integer;
+function lua_dostring(L: Plua_State; const str: PAnsiChar): Integer;
 begin
   Result := luaL_loadstring(L, str);
   if Result = 0 then
-    Result := lua_pcall(L, 0, LUA_MULTRET, 0);
+    Result := lua_pcall(L, 0, TLUA_MULTRET, 0);
 end;   
 
-procedure lua_Lgetmetatable(L: Plua_State; tname: PChar);
+procedure lua_Lgetmetatable(L: Plua_State; tname: PAnsiChar);
 begin
-  lua_getfield(L, LUA_REGISTRYINDEX, tname);
+  lua_getfield(L, TLUA_REGISTRYINDEX, tname);
 end;        
 
 procedure luaL_addchar(B: PluaL_Buffer; c: Char);
 begin
-  if Cardinal(@(B^.p)) < (Cardinal(@(B^.buffer[0])) + LUAL_BUFFERSIZE) then
+  if Cardinal(@(B^.p)) < (Cardinal(@(B^.buffer[0])) + TLUAL_BUFFERSIZE) then
     luaL_prepbuffer(B);
   B^.p[1] := c;
   B^.p := B^.p + 1;
@@ -812,12 +816,12 @@ end;
 
 procedure lua_unref(L: Plua_State; ref: Integer);
 begin
-  luaL_unref(L, LUA_REGISTRYINDEX, ref);
+  luaL_unref(L, TLUA_REGISTRYINDEX, ref);
 end;
 
 procedure lua_getref(L: Plua_State; ref: Integer);
 begin
-  lua_rawgeti(L, LUA_REGISTRYINDEX, ref);
+  lua_rawgeti(L, TLUA_REGISTRYINDEX, ref);
 end;     
 
 end.
